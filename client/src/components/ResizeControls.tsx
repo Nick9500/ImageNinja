@@ -38,8 +38,12 @@ export function ResizeControls({
     if (maintainAspectRatio && newWidth > 0) {
       const newHeight = Math.round(newWidth / aspectRatio);
       setHeight(newHeight);
+      // Apply resize immediately
+      onResize({ width: newWidth, height: newHeight });
+    } else if (newWidth > 0) {
+      onResize({ width: newWidth, height });
     }
-  }, [maintainAspectRatio, aspectRatio]);
+  }, [maintainAspectRatio, aspectRatio, onResize, height]);
 
   const handleHeightChange = useCallback((value: string) => {
     const newHeight = parseInt(value) || 0;
@@ -48,8 +52,12 @@ export function ResizeControls({
     if (maintainAspectRatio && newHeight > 0) {
       const newWidth = Math.round(newHeight * aspectRatio);
       setWidth(newWidth);
+      // Apply resize immediately
+      onResize({ width: newWidth, height: newHeight });
+    } else if (newHeight > 0) {
+      onResize({ width, height: newHeight });
     }
-  }, [maintainAspectRatio, aspectRatio]);
+  }, [maintainAspectRatio, aspectRatio, onResize, width]);
 
   const handleScaleChange = useCallback((value: number[]) => {
     const scaleValue = value[0];
@@ -60,21 +68,22 @@ export function ResizeControls({
     
     setWidth(newWidth);
     setHeight(newHeight);
-  }, [originalDimensions]);
+    
+    // Apply resize immediately as user drags the slider
+    onResize({ width: newWidth, height: newHeight });
+  }, [originalDimensions, onResize]);
 
-  const handleApplyResize = useCallback(() => {
-    if (width > 0 && height > 0) {
-      onResize({ width, height });
-    }
-  }, [width, height, onResize]);
+
 
   const handleAspectRatioChange = useCallback((checked: boolean) => {
     setMaintainAspectRatio(checked);
     if (checked && width > 0) {
       const newHeight = Math.round(width / aspectRatio);
       setHeight(newHeight);
+      // Apply resize immediately when aspect ratio is toggled
+      onResize({ width, height: newHeight });
     }
-  }, [width, aspectRatio]);
+  }, [width, aspectRatio, onResize]);
 
   return (
     <Card data-testid="resize-controls">
@@ -148,13 +157,9 @@ export function ResizeControls({
           </div>
         </div>
         
-        <Button 
-          onClick={handleApplyResize}
-          className="w-full bg-primary hover:bg-primary/90"
-          data-testid="button-apply-resize"
-        >
-          Apply Resize
-        </Button>
+        <div className="text-xs text-muted-foreground text-center">
+          Changes apply automatically
+        </div>
       </CardContent>
     </Card>
   );
