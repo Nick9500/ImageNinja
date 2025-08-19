@@ -27,7 +27,13 @@ export function ResizeControls({
   useEffect(() => {
     setWidth(currentDimensions.width);
     setHeight(currentDimensions.height);
-  }, [currentDimensions]);
+    
+    // Update scale based on current dimensions relative to original
+    if (originalDimensions.width > 0) {
+      const currentScale = currentDimensions.width / originalDimensions.width;
+      setScale([currentScale]);
+    }
+  }, [currentDimensions, originalDimensions]);
 
   const aspectRatio = originalDimensions.width / originalDimensions.height;
 
@@ -38,12 +44,20 @@ export function ResizeControls({
     if (maintainAspectRatio && newWidth > 0) {
       const newHeight = Math.round(newWidth / aspectRatio);
       setHeight(newHeight);
+      // Update scale slider
+      if (originalDimensions.width > 0) {
+        setScale([newWidth / originalDimensions.width]);
+      }
       // Apply resize immediately
       onResize({ width: newWidth, height: newHeight });
     } else if (newWidth > 0) {
+      // Update scale slider
+      if (originalDimensions.width > 0) {
+        setScale([newWidth / originalDimensions.width]);
+      }
       onResize({ width: newWidth, height });
     }
-  }, [maintainAspectRatio, aspectRatio, onResize, height]);
+  }, [maintainAspectRatio, aspectRatio, onResize, height, originalDimensions]);
 
   const handleHeightChange = useCallback((value: string) => {
     const newHeight = parseInt(value) || 0;
@@ -52,12 +66,20 @@ export function ResizeControls({
     if (maintainAspectRatio && newHeight > 0) {
       const newWidth = Math.round(newHeight * aspectRatio);
       setWidth(newWidth);
+      // Update scale slider
+      if (originalDimensions.width > 0) {
+        setScale([newWidth / originalDimensions.width]);
+      }
       // Apply resize immediately
       onResize({ width: newWidth, height: newHeight });
     } else if (newHeight > 0) {
+      // For height changes without aspect ratio, update scale based on width
+      if (originalDimensions.width > 0) {
+        setScale([width / originalDimensions.width]);
+      }
       onResize({ width, height: newHeight });
     }
-  }, [maintainAspectRatio, aspectRatio, onResize, width]);
+  }, [maintainAspectRatio, aspectRatio, onResize, width, originalDimensions]);
 
   const handleScaleChange = useCallback((value: number[]) => {
     const scaleValue = value[0];
