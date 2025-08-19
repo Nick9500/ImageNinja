@@ -37,7 +37,9 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
   }, [originalImage]);
 
   const handleResize = useCallback((dimensions: ImageDimensions) => {
+    console.log('ImageEditor handleResize called with:', dimensions);
     if (processor) {
+      console.log('Processor exists, calling resize');
       processor.resize(dimensions.width, dimensions.height);
       setCurrentDimensions(dimensions);
       // Adjust crop area to stay within new bounds
@@ -48,6 +50,8 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
         width: Math.min(prev.width, dimensions.width),
         height: Math.min(prev.height, dimensions.height)
       }));
+    } else {
+      console.log('No processor available');
     }
   }, [processor]);
 

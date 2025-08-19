@@ -92,6 +92,7 @@ export function ResizeControls({
     setHeight(newHeight);
     
     // Apply resize immediately as user drags the slider
+    console.log('Scale changed:', scaleValue, 'New dimensions:', newWidth, newHeight);
     onResize({ width: newWidth, height: newHeight });
   }, [originalDimensions, onResize]);
 

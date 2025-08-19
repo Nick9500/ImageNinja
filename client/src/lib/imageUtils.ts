@@ -53,8 +53,13 @@ export class ImageProcessor {
   }
 
   resize(width: number, height: number) {
-    if (!this.originalImage) return;
+    console.log('ImageProcessor resize called with:', width, height);
+    if (!this.originalImage) {
+      console.log('No original image available');
+      return;
+    }
     
+    console.log('Drawing image with new dimensions');
     this.drawImage(this.originalImage, { width, height });
   }
 
