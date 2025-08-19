@@ -141,8 +141,13 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
             <div className="relative bg-muted rounded-lg p-4 min-h-[400px] flex items-center justify-center canvas-container">
               <canvas
                 ref={canvasRef}
-                className="max-w-full max-h-[500px] border border-border rounded shadow-lg"
-                style={{ cursor: cropMode ? 'crosshair' : 'default' }}
+                className="border border-border rounded shadow-lg"
+                style={{ 
+                  cursor: cropMode ? 'crosshair' : 'default',
+                  maxWidth: '100%',
+                  maxHeight: '500px',
+                  objectFit: 'contain'
+                }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}

@@ -42,6 +42,7 @@ export class ImageProcessor {
     const targetWidth = dimensions?.width || img.width;
     const targetHeight = dimensions?.height || img.height;
     
+    console.log('Setting canvas dimensions to:', targetWidth, 'x', targetHeight);
     this.canvas.width = targetWidth;
     this.canvas.height = targetHeight;
     
@@ -50,6 +51,7 @@ export class ImageProcessor {
     
     // Draw image
     this.ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+    console.log('Canvas actual size after drawing:', this.canvas.width, 'x', this.canvas.height);
   }
 
   resize(width: number, height: number) {
