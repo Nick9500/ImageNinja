@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(222, 47%, 7%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(210, 11%, 15%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(210, 11%, 15%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(262, 83%, 68%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(215, 16%, 47%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(217, 10%, 25%);
+  --muted-foreground: hsl(215, 10%, 62%);
+  --accent: hsl(217, 10%, 25%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 63%, 31%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(215, 16%, 47%);
+  --input: hsl(215, 16%, 47%);
+  --ring: hsl(262, 83%, 68%);
+  --chart-1: hsl(262, 83%, 68%);
+  --chart-2: hsl(159, 100%, 36%);
+  --chart-3: hsl(42, 93%, 56%);
+  --chart-4: hsl(147, 79%, 42%);
+  --chart-5: hsl(341, 75%, 51%);
+  --sidebar: hsl(210, 11%, 15%);
+  --sidebar-foreground: hsl(0, 0%, 100%);
+  --sidebar-primary: hsl(262, 83%, 68%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(217, 10%, 25%);
+  --sidebar-accent-foreground: hsl(0, 0%, 100%);
+  --sidebar-border: hsl(215, 16%, 47%);
+  --sidebar-ring: hsl(262, 83%, 68%);
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: hsl(222, 47%, 7%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(210, 11%, 15%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(210, 11%, 15%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(262, 83%, 68%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(215, 16%, 47%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(217, 10%, 25%);
+  --muted-foreground: hsl(215, 10%, 62%);
+  --accent: hsl(217, 10%, 25%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 63%, 31%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(215, 16%, 47%);
+  --input: hsl(215, 16%, 47%);
+  --ring: hsl(262, 83%, 68%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  input[type="range"] {
+    @apply accent-primary;
+  }
+}
+
+/* Custom styles for image editor */
+.canvas-container {
+  position: relative;
+  display: inline-block;
+}
+
+.crop-overlay {
+  position: absolute;
+  border: 2px solid hsl(262, 83%, 68%);
+  background: hsla(262, 83%, 68%, 0.1);
+  cursor: move;
+  z-index: 10;
+}
+
+.crop-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: hsl(262, 83%, 68%);
+  border: 1px solid white;
+  border-radius: 2px;
+  z-index: 11;
+}
+
+.crop-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+.crop-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+.crop-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+.crop-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+
+.loading-spinner {
+  border: 2px solid transparent;
+  border-top: 2px solid hsl(262, 83%, 68%);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
