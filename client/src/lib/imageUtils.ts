@@ -13,7 +13,7 @@ export interface CropArea {
 export class ImageProcessor {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private originalImage: HTMLImageElement | null = null;
+  public originalImage: HTMLImageElement | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;

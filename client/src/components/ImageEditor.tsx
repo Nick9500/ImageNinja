@@ -26,6 +26,8 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
   useEffect(() => {
     if (canvasRef.current && originalImage) {
       const imageProcessor = new ImageProcessor(canvasRef.current);
+      // Set the original image directly in the processor
+      imageProcessor.originalImage = originalImage;
       imageProcessor.drawImage(originalImage);
       setProcessor(imageProcessor);
       
