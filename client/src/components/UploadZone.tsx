@@ -32,7 +32,8 @@ export function UploadZone({ onImageLoaded }: UploadZoneProps) {
       const image = await processor.loadImage(file);
       onImageLoaded(file, image);
     } catch (err) {
-      setError('Failed to load image. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load image. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -88,6 +89,16 @@ export function UploadZone({ onImageLoaded }: UploadZoneProps) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleBrowseClick}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload image file by dropping or clicking to browse"
+        aria-describedby="upload-instructions"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleBrowseClick();
+          }
+        }}
         data-testid="upload-zone"
       >
         <div className="space-y-6">
@@ -105,7 +116,7 @@ export function UploadZone({ onImageLoaded }: UploadZoneProps) {
             <h3 className="text-xl font-semibold mb-2">
               {isLoading ? 'Processing...' : 'Drop your JPEG here'}
             </h3>
-            <p className="text-muted-foreground mb-4">
+            <p id="upload-instructions" className="text-muted-foreground mb-4">
               {isLoading ? 'Please wait while we load your image' : 'or click to browse files'}
             </p>
             
@@ -136,6 +147,7 @@ export function UploadZone({ onImageLoaded }: UploadZoneProps) {
           className="hidden"
           accept=".jpg,.jpeg,image/jpeg"
           onChange={handleFileSelect}
+          aria-label="Select image file"
           data-testid="input-file"
         />
       </div>

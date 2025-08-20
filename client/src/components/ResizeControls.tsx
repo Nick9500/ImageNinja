@@ -170,6 +170,7 @@ export function ResizeControls({
             max={3}
             step={0.1}
             className="w-full"
+            aria-label="Scale percentage for resizing image"
             data-testid="slider-scale"
           />
           <div className="relative mt-2 h-4">

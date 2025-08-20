@@ -43,7 +43,12 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
 
 
   const handleResize = useCallback((dimensions: ImageDimensions) => {
-    if (processor) {
+    if (!processor) {
+      console.error('Image processor not available');
+      return;
+    }
+    
+    try {
       processor.resize(dimensions.width, dimensions.height);
       setCurrentDimensions(dimensions);
       // Adjust crop area to stay within new bounds
@@ -54,31 +59,54 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
         width: Math.min(prev.width, dimensions.width),
         height: Math.min(prev.height, dimensions.height)
       }));
+    } catch (err) {
+      console.error('Failed to resize image:', err);
     }
   }, [processor]);
 
   const handleCrop = useCallback(() => {
-    if (processor) {
+    if (!processor) {
+      console.error('Image processor not available');
+      return;
+    }
+    
+    try {
       processor.crop(cropArea);
       setCurrentDimensions({ width: cropArea.width, height: cropArea.height });
       setCropArea({ x: 0, y: 0, width: cropArea.width, height: cropArea.height });
       setCropMode(false);
+    } catch (err) {
+      console.error('Failed to crop image:', err);
     }
   }, [processor, cropArea]);
 
   const handleReset = useCallback(() => {
-    if (processor) {
+    if (!processor) {
+      console.error('Image processor not available');
+      return;
+    }
+    
+    try {
       processor.reset();
       const dims = { width: originalImage.width, height: originalImage.height };
       setCurrentDimensions(dims);
       setCropArea({ x: 0, y: 0, width: Math.min(200, dims.width), height: Math.min(150, dims.height) });
       setCropMode(false);
+    } catch (err) {
+      console.error('Failed to reset image:', err);
     }
   }, [processor, originalImage]);
 
   const handleDownload = useCallback((filename: string, quality: number) => {
-    if (processor) {
+    if (!processor) {
+      console.error('Image processor not available');
+      return;
+    }
+    
+    try {
       processor.downloadImage(filename, quality);
+    } catch (err) {
+      console.error('Failed to download image:', err);
     }
   }, [processor]);
 
@@ -251,6 +279,14 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
                   height: 'auto'
                 }}
                 onMouseDown={handleMouseDown}
+                role="img"
+                aria-label="Image editor canvas with current image"
+                tabIndex={cropMode ? 0 : -1}
+                onKeyDown={(e) => {
+                  if (cropMode && (e.key === 'Escape')) {
+                    setCropMode(false);
+                  }
+                }}
                 data-testid="canvas-main"
               />
               
@@ -264,23 +300,88 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
                     height: getScaledCropArea().height,
                   }}
                   onMouseDown={handleCropOverlayMouseDown}
+                  role="region"
+                  aria-label="Crop selection area - drag to move, use corner handles to resize"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    const step = e.shiftKey ? 10 : 1;
+                    let newCrop = { ...cropArea };
+                    
+                    switch (e.key) {
+                      case 'ArrowUp':
+                        newCrop.y = Math.max(0, newCrop.y - step);
+                        break;
+                      case 'ArrowDown':
+                        newCrop.y = Math.min(currentDimensions.height - newCrop.height, newCrop.y + step);
+                        break;
+                      case 'ArrowLeft':
+                        newCrop.x = Math.max(0, newCrop.x - step);
+                        break;
+                      case 'ArrowRight':
+                        newCrop.x = Math.min(currentDimensions.width - newCrop.width, newCrop.x + step);
+                        break;
+                      case 'Enter':
+                        handleCrop();
+                        return;
+                      case 'Escape':
+                        setCropMode(false);
+                        return;
+                      default:
+                        return;
+                    }
+                    
+                    e.preventDefault();
+                    setCropArea(newCrop);
+                  }}
                   data-testid="crop-overlay"
                 >
                   <div 
                     className="crop-handle nw" 
                     onMouseDown={(e) => handleCropHandleMouseDown(e, 'nw')}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Resize crop area from top-left corner"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                      }
+                    }}
                   />
                   <div 
                     className="crop-handle ne" 
                     onMouseDown={(e) => handleCropHandleMouseDown(e, 'ne')}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Resize crop area from top-right corner"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                      }
+                    }}
                   />
                   <div 
                     className="crop-handle sw" 
                     onMouseDown={(e) => handleCropHandleMouseDown(e, 'sw')}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Resize crop area from bottom-left corner"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                      }
+                    }}
                   />
                   <div 
                     className="crop-handle se" 
                     onMouseDown={(e) => handleCropHandleMouseDown(e, 'se')}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Resize crop area from bottom-right corner"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                      }
+                    }}
                   />
                 </div>
               )}
