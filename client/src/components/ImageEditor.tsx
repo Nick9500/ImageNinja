@@ -99,13 +99,7 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
       height: cropArea.height * scaleY,
     };
     
-    console.log('Scaling calculation:', {
-      cropArea,
-      canvasDisplay: { displayWidth, displayHeight },
-      actualSize: currentDimensions,
-      scale: { scaleX, scaleY },
-      scaled
-    });
+    // Debug logging removed
     
     return scaled;
   }, [cropArea, currentDimensions]);
@@ -137,75 +131,95 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     return;
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging || !cropMode || !canvasRef.current) return;
-    
-    const rect = canvasRef.current.getBoundingClientRect();
-    const canvas = canvasRef.current;
-    const scaleX = canvas.offsetWidth / currentDimensions.width;
-    const scaleY = canvas.offsetHeight / currentDimensions.height;
-    
-    if (dragMode === 'move') {
-      // Convert from display coordinates to actual image coordinates
-      const displayX = e.clientX - rect.left - dragStart.x;
-      const displayY = e.clientY - rect.top - dragStart.y;
-      const actualX = displayX / scaleX;
-      const actualY = displayY / scaleY;
-      
-      const newX = Math.max(0, Math.min(actualX, currentDimensions.width - cropArea.width));
-      const newY = Math.max(0, Math.min(actualY, currentDimensions.height - cropArea.height));
-      
-      setCropArea(prev => ({
-        ...prev,
-        x: newX,
-        y: newY
-      }));
-    } else if (dragMode === 'resize' && resizeHandle) {
-      const deltaX = (e.clientX - dragStart.x) / scaleX;
-      const deltaY = (e.clientY - dragStart.y) / scaleY;
-      
-      setCropArea(prev => {
-        let newCrop = { ...prev };
-        
-        switch (resizeHandle) {
-          case 'se':
-            newCrop.width = Math.min(Math.max(20, prev.width + deltaX), currentDimensions.width - prev.x);
-            newCrop.height = Math.min(Math.max(20, prev.height + deltaY), currentDimensions.height - prev.y);
-            break;
-          case 'nw':
-            const newWidth = Math.max(20, prev.width - deltaX);
-            const newHeight = Math.max(20, prev.height - deltaY);
-            newCrop.x = Math.max(0, prev.x + prev.width - newWidth);
-            newCrop.y = Math.max(0, prev.y + prev.height - newHeight);
-            newCrop.width = newWidth;
-            newCrop.height = newHeight;
-            break;
-          case 'ne':
-            newCrop.width = Math.min(Math.max(20, prev.width + deltaX), currentDimensions.width - prev.x);
-            const newHeightNE = Math.max(20, prev.height - deltaY);
-            newCrop.y = Math.max(0, prev.y + prev.height - newHeightNE);
-            newCrop.height = newHeightNE;
-            break;
-          case 'sw':
-            const newWidthSW = Math.max(20, prev.width - deltaX);
-            newCrop.x = Math.max(0, prev.x + prev.width - newWidthSW);
-            newCrop.width = newWidthSW;
-            newCrop.height = Math.min(Math.max(20, prev.height + deltaY), currentDimensions.height - prev.y);
-            break;
-        }
-        
-        return newCrop;
-      });
-      
-      setDragStart({ x: e.clientX, y: e.clientY });
-    }
-  }, [isDragging, cropMode, dragMode, dragStart, currentDimensions, cropArea, resizeHandle]);
+  // Mouse move is now handled by global event listeners
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
     setDragMode('create');
     setResizeHandle(null);
   }, []);
+
+  // Add global mouse event listeners for drag operations
+  useEffect(() => {
+    if (isDragging) {
+      const handleGlobalMouseMove = (e: MouseEvent) => {
+        if (!canvasRef.current) return;
+        
+        const rect = canvasRef.current.getBoundingClientRect();
+        const canvas = canvasRef.current;
+        const scaleX = canvas.offsetWidth / currentDimensions.width;
+        const scaleY = canvas.offsetHeight / currentDimensions.height;
+        
+        if (dragMode === 'move') {
+          const displayX = e.clientX - rect.left - dragStart.x;
+          const displayY = e.clientY - rect.top - dragStart.y;
+          const actualX = displayX / scaleX;
+          const actualY = displayY / scaleY;
+          
+          const newX = Math.max(0, Math.min(actualX, currentDimensions.width - cropArea.width));
+          const newY = Math.max(0, Math.min(actualY, currentDimensions.height - cropArea.height));
+          
+          setCropArea(prev => ({
+            ...prev,
+            x: newX,
+            y: newY
+          }));
+        } else if (dragMode === 'resize' && resizeHandle) {
+          const deltaX = (e.clientX - dragStart.x) / scaleX;
+          const deltaY = (e.clientY - dragStart.y) / scaleY;
+          
+          setCropArea(prev => {
+            let newCrop = { ...prev };
+            
+            switch (resizeHandle) {
+              case 'se':
+                newCrop.width = Math.min(Math.max(20, prev.width + deltaX), currentDimensions.width - prev.x);
+                newCrop.height = Math.min(Math.max(20, prev.height + deltaY), currentDimensions.height - prev.y);
+                break;
+              case 'nw':
+                const newWidth = Math.max(20, prev.width - deltaX);
+                const newHeight = Math.max(20, prev.height - deltaY);
+                newCrop.x = Math.max(0, prev.x + prev.width - newWidth);
+                newCrop.y = Math.max(0, prev.y + prev.height - newHeight);
+                newCrop.width = newWidth;
+                newCrop.height = newHeight;
+                break;
+              case 'ne':
+                newCrop.width = Math.min(Math.max(20, prev.width + deltaX), currentDimensions.width - prev.x);
+                const newHeightNE = Math.max(20, prev.height - deltaY);
+                newCrop.y = Math.max(0, prev.y + prev.height - newHeightNE);
+                newCrop.height = newHeightNE;
+                break;
+              case 'sw':
+                const newWidthSW = Math.max(20, prev.width - deltaX);
+                newCrop.x = Math.max(0, prev.x + prev.width - newWidthSW);
+                newCrop.width = newWidthSW;
+                newCrop.height = Math.min(Math.max(20, prev.height + deltaY), currentDimensions.height - prev.y);
+                break;
+            }
+            
+            return newCrop;
+          });
+          
+          setDragStart({ x: e.clientX, y: e.clientY });
+        }
+      };
+
+      const handleGlobalMouseUp = () => {
+        setIsDragging(false);
+        setDragMode('create');
+        setResizeHandle(null);
+      };
+
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+
+      return () => {
+        document.removeEventListener('mousemove', handleGlobalMouseMove);
+        document.removeEventListener('mouseup', handleGlobalMouseUp);
+      };
+    }
+  }, [isDragging, dragMode, dragStart, currentDimensions, cropArea, resizeHandle]);
 
   return (
     <div className="grid lg:grid-cols-3 gap-8" data-testid="image-editor">
@@ -237,8 +251,6 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
                   height: 'auto'
                 }}
                 onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
                 data-testid="canvas-main"
               />
               
@@ -310,7 +322,7 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
                 width: defaultSize,
                 height: defaultSize
               };
-              console.log('Setting crop area:', newCropArea, 'Current dimensions:', currentDimensions);
+              // Debug logging removed
               setCropArea(newCropArea);
             }
             setCropMode(!cropMode);
