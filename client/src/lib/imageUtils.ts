@@ -53,11 +53,21 @@ export class ImageProcessor {
   }
 
   resize(width: number, height: number) {
-    if (!this.originalImage) {
-      return;
-    }
+    // Get current canvas content as an image
+    const currentImageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
     
-    this.drawImage(this.originalImage, { width, height });
+    // Create a temporary canvas with current content
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d')!;
+    tempCanvas.width = this.canvas.width;
+    tempCanvas.height = this.canvas.height;
+    tempCtx.putImageData(currentImageData, 0, 0);
+    
+    // Resize main canvas and draw the scaled content
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.ctx.clearRect(0, 0, width, height);
+    this.ctx.drawImage(tempCanvas, 0, 0, width, height);
   }
 
   crop(cropArea: CropArea) {
