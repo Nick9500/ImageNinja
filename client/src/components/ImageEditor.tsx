@@ -40,6 +40,8 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     }
   }, [originalImage]);
 
+
+
   const handleResize = useCallback((dimensions: ImageDimensions) => {
     if (processor) {
       processor.resize(dimensions.width, dimensions.height);
@@ -92,13 +94,10 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     e.stopPropagation();
     setIsDragging(true);
     setDragMode('move');
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (rect) {
-      setDragStart({ 
-        x: e.clientX - (cropArea.x + 16), // Account for container padding
-        y: e.clientY - (cropArea.y + 16)
-      });
-    }
+    setDragStart({ 
+      x: e.clientX - cropArea.x,
+      y: e.clientY - cropArea.y
+    });
   }, [cropArea]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -118,21 +117,20 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     if (!isDragging || !cropMode || !canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
+    const canvasX = e.clientX - rect.left;
+    const canvasY = e.clientY - rect.top;
     
     if (dragMode === 'create') {
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const width = Math.abs(x - dragStart.x);
-      const height = Math.abs(y - dragStart.y);
-      const cropX = Math.min(x, dragStart.x);
-      const cropY = Math.min(y, dragStart.y);
+      const width = Math.abs(canvasX - dragStart.x);
+      const height = Math.abs(canvasY - dragStart.y);
+      const cropX = Math.min(canvasX, dragStart.x);
+      const cropY = Math.min(canvasY, dragStart.y);
       
       setCropArea({ 
-        x: cropX, 
-        y: cropY, 
-        width: Math.min(width, currentDimensions.width - cropX),
-        height: Math.min(height, currentDimensions.height - cropY)
+        x: Math.max(0, cropX), 
+        y: Math.max(0, cropY), 
+        width: Math.min(width, currentDimensions.width - Math.max(0, cropX)),
+        height: Math.min(height, currentDimensions.height - Math.max(0, cropY))
       });
     } else if (dragMode === 'move') {
       const newX = Math.max(0, Math.min(e.clientX - dragStart.x, currentDimensions.width - cropArea.width));
@@ -151,31 +149,31 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
         let newCrop = { ...prev };
         
         switch (resizeHandle) {
+          case 'se':
+            newCrop.width = Math.min(Math.max(20, prev.width + deltaX), currentDimensions.width - prev.x);
+            newCrop.height = Math.min(Math.max(20, prev.height + deltaY), currentDimensions.height - prev.y);
+            break;
           case 'nw':
-            newCrop.x = Math.max(0, prev.x + deltaX);
-            newCrop.y = Math.max(0, prev.y + deltaY);
-            newCrop.width = Math.max(10, prev.width - deltaX);
-            newCrop.height = Math.max(10, prev.height - deltaY);
+            const newWidth = Math.max(20, prev.width - deltaX);
+            const newHeight = Math.max(20, prev.height - deltaY);
+            newCrop.x = Math.max(0, prev.x + prev.width - newWidth);
+            newCrop.y = Math.max(0, prev.y + prev.height - newHeight);
+            newCrop.width = newWidth;
+            newCrop.height = newHeight;
             break;
           case 'ne':
-            newCrop.y = Math.max(0, prev.y + deltaY);
-            newCrop.width = Math.max(10, prev.width + deltaX);
-            newCrop.height = Math.max(10, prev.height - deltaY);
+            newCrop.width = Math.min(Math.max(20, prev.width + deltaX), currentDimensions.width - prev.x);
+            const newHeightNE = Math.max(20, prev.height - deltaY);
+            newCrop.y = Math.max(0, prev.y + prev.height - newHeightNE);
+            newCrop.height = newHeightNE;
             break;
           case 'sw':
-            newCrop.x = Math.max(0, prev.x + deltaX);
-            newCrop.width = Math.max(10, prev.width - deltaX);
-            newCrop.height = Math.max(10, prev.height + deltaY);
-            break;
-          case 'se':
-            newCrop.width = Math.max(10, prev.width + deltaX);
-            newCrop.height = Math.max(10, prev.height + deltaY);
+            const newWidthSW = Math.max(20, prev.width - deltaX);
+            newCrop.x = Math.max(0, prev.x + prev.width - newWidthSW);
+            newCrop.width = newWidthSW;
+            newCrop.height = Math.min(Math.max(20, prev.height + deltaY), currentDimensions.height - prev.y);
             break;
         }
-        
-        // Ensure crop stays within canvas bounds
-        newCrop.width = Math.min(newCrop.width, currentDimensions.width - newCrop.x);
-        newCrop.height = Math.min(newCrop.height, currentDimensions.height - newCrop.y);
         
         return newCrop;
       });
