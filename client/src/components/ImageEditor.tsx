@@ -216,6 +216,7 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
                   onMouseDown={handleCropOverlayMouseDown}
                   data-testid="crop-overlay"
                 >
+                  {console.log('Rendering crop overlay:', { cropMode, cropArea })}
                   <div 
                     className="crop-handle nw" 
                     onMouseDown={(e) => handleCropHandleMouseDown(e, 'nw')}
@@ -266,12 +267,14 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
               const defaultSize = Math.min(200, currentDimensions.width / 3, currentDimensions.height / 3);
               const centerX = (currentDimensions.width - defaultSize) / 2;
               const centerY = (currentDimensions.height - defaultSize) / 2;
-              setCropArea({
+              const newCropArea = {
                 x: Math.max(0, centerX),
                 y: Math.max(0, centerY),
                 width: defaultSize,
                 height: defaultSize
-              });
+              };
+              console.log('Setting crop area:', newCropArea, 'Current dimensions:', currentDimensions);
+              setCropArea(newCropArea);
             }
             setCropMode(!cropMode);
           }}
