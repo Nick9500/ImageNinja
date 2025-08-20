@@ -82,6 +82,34 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     }
   }, [processor]);
 
+  // Calculate scaled crop area for display
+  const getScaledCropArea = useCallback(() => {
+    if (!canvasRef.current) return cropArea;
+    
+    const canvas = canvasRef.current;
+    const displayWidth = canvas.offsetWidth;
+    const displayHeight = canvas.offsetHeight;
+    const scaleX = displayWidth / currentDimensions.width;
+    const scaleY = displayHeight / currentDimensions.height;
+    
+    const scaled = {
+      x: cropArea.x * scaleX,
+      y: cropArea.y * scaleY,
+      width: cropArea.width * scaleX,
+      height: cropArea.height * scaleY,
+    };
+    
+    console.log('Scaling calculation:', {
+      cropArea,
+      canvasDisplay: { displayWidth, displayHeight },
+      actualSize: currentDimensions,
+      scale: { scaleX, scaleY },
+      scaled
+    });
+    
+    return scaled;
+  }, [cropArea, currentDimensions]);
+
   const handleCropHandleMouseDown = useCallback((e: React.MouseEvent, handle: 'nw' | 'ne' | 'sw' | 'se') => {
     e.stopPropagation();
     setIsDragging(true);
@@ -96,12 +124,13 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     setDragMode('move');
     const rect = canvasRef.current?.getBoundingClientRect();
     if (rect) {
+      const scaledCrop = getScaledCropArea();
       setDragStart({ 
-        x: e.clientX - cropArea.x - rect.left,
-        y: e.clientY - cropArea.y - rect.top
+        x: e.clientX - scaledCrop.x - rect.left,
+        y: e.clientY - scaledCrop.y - rect.top
       });
     }
-  }, [cropArea]);
+  }, [getScaledCropArea]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     // Remove canvas click to create crop - only allow handle/overlay interaction
@@ -112,10 +141,19 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     if (!isDragging || !cropMode || !canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
+    const canvas = canvasRef.current;
+    const scaleX = canvas.offsetWidth / currentDimensions.width;
+    const scaleY = canvas.offsetHeight / currentDimensions.height;
     
     if (dragMode === 'move') {
-      const newX = Math.max(0, Math.min(e.clientX - rect.left - dragStart.x, currentDimensions.width - cropArea.width));
-      const newY = Math.max(0, Math.min(e.clientY - rect.top - dragStart.y, currentDimensions.height - cropArea.height));
+      // Convert from display coordinates to actual image coordinates
+      const displayX = e.clientX - rect.left - dragStart.x;
+      const displayY = e.clientY - rect.top - dragStart.y;
+      const actualX = displayX / scaleX;
+      const actualY = displayY / scaleY;
+      
+      const newX = Math.max(0, Math.min(actualX, currentDimensions.width - cropArea.width));
+      const newY = Math.max(0, Math.min(actualY, currentDimensions.height - cropArea.height));
       
       setCropArea(prev => ({
         ...prev,
@@ -123,8 +161,8 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
         y: newY
       }));
     } else if (dragMode === 'resize' && resizeHandle) {
-      const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
+      const deltaX = (e.clientX - dragStart.x) / scaleX;
+      const deltaY = (e.clientY - dragStart.y) / scaleY;
       
       setCropArea(prev => {
         let newCrop = { ...prev };
@@ -168,34 +206,6 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     setDragMode('create');
     setResizeHandle(null);
   }, []);
-
-  // Calculate scaled crop area for display
-  const getScaledCropArea = useCallback(() => {
-    if (!canvasRef.current) return cropArea;
-    
-    const canvas = canvasRef.current;
-    const displayWidth = canvas.offsetWidth;
-    const displayHeight = canvas.offsetHeight;
-    const scaleX = displayWidth / currentDimensions.width;
-    const scaleY = displayHeight / currentDimensions.height;
-    
-    const scaled = {
-      x: cropArea.x * scaleX,
-      y: cropArea.y * scaleY,
-      width: cropArea.width * scaleX,
-      height: cropArea.height * scaleY,
-    };
-    
-    console.log('Scaling calculation:', {
-      cropArea,
-      canvasDisplay: { displayWidth, displayHeight },
-      actualSize: currentDimensions,
-      scale: { scaleX, scaleY },
-      scaled
-    });
-    
-    return scaled;
-  }, [cropArea, currentDimensions]);
 
   return (
     <div className="grid lg:grid-cols-3 gap-8" data-testid="image-editor">
