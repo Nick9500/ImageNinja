@@ -169,6 +169,34 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     setResizeHandle(null);
   }, []);
 
+  // Calculate scaled crop area for display
+  const getScaledCropArea = useCallback(() => {
+    if (!canvasRef.current) return cropArea;
+    
+    const canvas = canvasRef.current;
+    const displayWidth = canvas.offsetWidth;
+    const displayHeight = canvas.offsetHeight;
+    const scaleX = displayWidth / currentDimensions.width;
+    const scaleY = displayHeight / currentDimensions.height;
+    
+    const scaled = {
+      x: cropArea.x * scaleX,
+      y: cropArea.y * scaleY,
+      width: cropArea.width * scaleX,
+      height: cropArea.height * scaleY,
+    };
+    
+    console.log('Scaling calculation:', {
+      cropArea,
+      canvasDisplay: { displayWidth, displayHeight },
+      actualSize: currentDimensions,
+      scale: { scaleX, scaleY },
+      scaled
+    });
+    
+    return scaled;
+  }, [cropArea, currentDimensions]);
+
   return (
     <div className="grid lg:grid-cols-3 gap-8" data-testid="image-editor">
       <div className="lg:col-span-2">
@@ -208,15 +236,14 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
                 <div
                   className="crop-overlay"
                   style={{
-                    left: cropArea.x,
-                    top: cropArea.y,
-                    width: cropArea.width,
-                    height: cropArea.height,
+                    left: getScaledCropArea().x,
+                    top: getScaledCropArea().y,
+                    width: getScaledCropArea().width,
+                    height: getScaledCropArea().height,
                   }}
                   onMouseDown={handleCropOverlayMouseDown}
                   data-testid="crop-overlay"
                 >
-                  {console.log('Rendering crop overlay:', { cropMode, cropArea })}
                   <div 
                     className="crop-handle nw" 
                     onMouseDown={(e) => handleCropHandleMouseDown(e, 'nw')}
