@@ -94,47 +94,28 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     e.stopPropagation();
     setIsDragging(true);
     setDragMode('move');
-    setDragStart({ 
-      x: e.clientX - cropArea.x,
-      y: e.clientY - cropArea.y
-    });
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+      setDragStart({ 
+        x: e.clientX - cropArea.x - rect.left,
+        y: e.clientY - cropArea.y - rect.top
+      });
+    }
   }, [cropArea]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!cropMode || !canvasRef.current) return;
-    
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    setIsDragging(true);
-    setDragMode('create');
-    setDragStart({ x, y });
-    setCropArea({ x, y, width: 0, height: 0 });
-  }, [cropMode]);
+    // Remove canvas click to create crop - only allow handle/overlay interaction
+    return;
+  }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || !cropMode || !canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
-    const canvasX = e.clientX - rect.left;
-    const canvasY = e.clientY - rect.top;
     
-    if (dragMode === 'create') {
-      const width = Math.abs(canvasX - dragStart.x);
-      const height = Math.abs(canvasY - dragStart.y);
-      const cropX = Math.min(canvasX, dragStart.x);
-      const cropY = Math.min(canvasY, dragStart.y);
-      
-      setCropArea({ 
-        x: Math.max(0, cropX), 
-        y: Math.max(0, cropY), 
-        width: Math.min(width, currentDimensions.width - Math.max(0, cropX)),
-        height: Math.min(height, currentDimensions.height - Math.max(0, cropY))
-      });
-    } else if (dragMode === 'move') {
-      const newX = Math.max(0, Math.min(e.clientX - dragStart.x, currentDimensions.width - cropArea.width));
-      const newY = Math.max(0, Math.min(e.clientY - dragStart.y, currentDimensions.height - cropArea.height));
+    if (dragMode === 'move') {
+      const newX = Math.max(0, Math.min(e.clientX - rect.left - dragStart.x, currentDimensions.width - cropArea.width));
+      const newY = Math.max(0, Math.min(e.clientY - rect.top - dragStart.y, currentDimensions.height - cropArea.height));
       
       setCropArea(prev => ({
         ...prev,
@@ -227,8 +208,8 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
                 <div
                   className="crop-overlay"
                   style={{
-                    left: cropArea.x + 16,
-                    top: cropArea.y + 16,
+                    left: cropArea.x,
+                    top: cropArea.y,
                     width: cropArea.width,
                     height: cropArea.height,
                   }}
@@ -279,7 +260,21 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
           canvasSize={currentDimensions}
           cropMode={cropMode}
           onCropAreaChange={setCropArea}
-          onCropModeToggle={() => setCropMode(!cropMode)}
+          onCropModeToggle={() => {
+            if (!cropMode) {
+              // Initialize default crop area when entering crop mode
+              const defaultSize = Math.min(200, currentDimensions.width / 3, currentDimensions.height / 3);
+              const centerX = (currentDimensions.width - defaultSize) / 2;
+              const centerY = (currentDimensions.height - defaultSize) / 2;
+              setCropArea({
+                x: Math.max(0, centerX),
+                y: Math.max(0, centerY),
+                width: defaultSize,
+                height: defaultSize
+              });
+            }
+            setCropMode(!cropMode);
+          }}
           onApplyCrop={handleCrop}
         />
         
