@@ -22,6 +22,8 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
   const [cropMode, setCropMode] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [dragMode, setDragMode] = useState<'create' | 'move' | 'resize'>('create');
+  const [resizeHandle, setResizeHandle] = useState<'nw' | 'ne' | 'sw' | 'se' | null>(null);
 
   useEffect(() => {
     if (canvasRef.current && originalImage) {
@@ -78,6 +80,27 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     }
   }, [processor]);
 
+  const handleCropHandleMouseDown = useCallback((e: React.MouseEvent, handle: 'nw' | 'ne' | 'sw' | 'se') => {
+    e.stopPropagation();
+    setIsDragging(true);
+    setDragMode('resize');
+    setResizeHandle(handle);
+    setDragStart({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const handleCropOverlayMouseDown = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDragging(true);
+    setDragMode('move');
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+      setDragStart({ 
+        x: e.clientX - (cropArea.x + 16), // Account for container padding
+        y: e.clientY - (cropArea.y + 16)
+      });
+    }
+  }, [cropArea]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!cropMode || !canvasRef.current) return;
     
@@ -86,6 +109,7 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     const y = e.clientY - rect.top;
     
     setIsDragging(true);
+    setDragMode('create');
     setDragStart({ x, y });
     setCropArea({ x, y, width: 0, height: 0 });
   }, [cropMode]);
@@ -94,24 +118,76 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
     if (!isDragging || !cropMode || !canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
     
-    const width = Math.abs(x - dragStart.x);
-    const height = Math.abs(y - dragStart.y);
-    const cropX = Math.min(x, dragStart.x);
-    const cropY = Math.min(y, dragStart.y);
-    
-    setCropArea({ 
-      x: cropX, 
-      y: cropY, 
-      width: Math.min(width, currentDimensions.width - cropX),
-      height: Math.min(height, currentDimensions.height - cropY)
-    });
-  }, [isDragging, cropMode, dragStart, currentDimensions]);
+    if (dragMode === 'create') {
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const width = Math.abs(x - dragStart.x);
+      const height = Math.abs(y - dragStart.y);
+      const cropX = Math.min(x, dragStart.x);
+      const cropY = Math.min(y, dragStart.y);
+      
+      setCropArea({ 
+        x: cropX, 
+        y: cropY, 
+        width: Math.min(width, currentDimensions.width - cropX),
+        height: Math.min(height, currentDimensions.height - cropY)
+      });
+    } else if (dragMode === 'move') {
+      const newX = Math.max(0, Math.min(e.clientX - dragStart.x, currentDimensions.width - cropArea.width));
+      const newY = Math.max(0, Math.min(e.clientY - dragStart.y, currentDimensions.height - cropArea.height));
+      
+      setCropArea(prev => ({
+        ...prev,
+        x: newX,
+        y: newY
+      }));
+    } else if (dragMode === 'resize' && resizeHandle) {
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+      
+      setCropArea(prev => {
+        let newCrop = { ...prev };
+        
+        switch (resizeHandle) {
+          case 'nw':
+            newCrop.x = Math.max(0, prev.x + deltaX);
+            newCrop.y = Math.max(0, prev.y + deltaY);
+            newCrop.width = Math.max(10, prev.width - deltaX);
+            newCrop.height = Math.max(10, prev.height - deltaY);
+            break;
+          case 'ne':
+            newCrop.y = Math.max(0, prev.y + deltaY);
+            newCrop.width = Math.max(10, prev.width + deltaX);
+            newCrop.height = Math.max(10, prev.height - deltaY);
+            break;
+          case 'sw':
+            newCrop.x = Math.max(0, prev.x + deltaX);
+            newCrop.width = Math.max(10, prev.width - deltaX);
+            newCrop.height = Math.max(10, prev.height + deltaY);
+            break;
+          case 'se':
+            newCrop.width = Math.max(10, prev.width + deltaX);
+            newCrop.height = Math.max(10, prev.height + deltaY);
+            break;
+        }
+        
+        // Ensure crop stays within canvas bounds
+        newCrop.width = Math.min(newCrop.width, currentDimensions.width - newCrop.x);
+        newCrop.height = Math.min(newCrop.height, currentDimensions.height - newCrop.y);
+        
+        return newCrop;
+      });
+      
+      setDragStart({ x: e.clientX, y: e.clientY });
+    }
+  }, [isDragging, cropMode, dragMode, dragStart, currentDimensions, cropArea, resizeHandle]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
+    setDragMode('create');
+    setResizeHandle(null);
   }, []);
 
   return (
@@ -158,12 +234,25 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
                     width: cropArea.width,
                     height: cropArea.height,
                   }}
+                  onMouseDown={handleCropOverlayMouseDown}
                   data-testid="crop-overlay"
                 >
-                  <div className="crop-handle nw" />
-                  <div className="crop-handle ne" />
-                  <div className="crop-handle sw" />
-                  <div className="crop-handle se" />
+                  <div 
+                    className="crop-handle nw" 
+                    onMouseDown={(e) => handleCropHandleMouseDown(e, 'nw')}
+                  />
+                  <div 
+                    className="crop-handle ne" 
+                    onMouseDown={(e) => handleCropHandleMouseDown(e, 'ne')}
+                  />
+                  <div 
+                    className="crop-handle sw" 
+                    onMouseDown={(e) => handleCropHandleMouseDown(e, 'sw')}
+                  />
+                  <div 
+                    className="crop-handle se" 
+                    onMouseDown={(e) => handleCropHandleMouseDown(e, 'se')}
+                  />
                 </div>
               )}
             </div>
