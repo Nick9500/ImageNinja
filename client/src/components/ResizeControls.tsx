@@ -48,14 +48,13 @@ export function ResizeControls({
       if (originalDimensions.width > 0) {
         setScale([newWidth / originalDimensions.width]);
       }
-      // Apply resize immediately
-      onResize({ width: newWidth, height: newHeight });
+      // Remove immediate resize
     } else if (newWidth > 0) {
       // Update scale slider
       if (originalDimensions.width > 0) {
         setScale([newWidth / originalDimensions.width]);
       }
-      onResize({ width: newWidth, height });
+      // Remove immediate resize
     }
   }, [maintainAspectRatio, aspectRatio, onResize, height, originalDimensions]);
 
@@ -70,14 +69,13 @@ export function ResizeControls({
       if (originalDimensions.width > 0) {
         setScale([newWidth / originalDimensions.width]);
       }
-      // Apply resize immediately
-      onResize({ width: newWidth, height: newHeight });
+      // Remove immediate resize
     } else if (newHeight > 0) {
       // For height changes without aspect ratio, update scale based on width
       if (originalDimensions.width > 0) {
         setScale([width / originalDimensions.width]);
       }
-      onResize({ width, height: newHeight });
+      // Remove immediate resize
     }
   }, [maintainAspectRatio, aspectRatio, onResize, width, originalDimensions]);
 
@@ -91,9 +89,8 @@ export function ResizeControls({
     setWidth(newWidth);
     setHeight(newHeight);
     
-    // Apply resize immediately as user drags the slider
-    onResize({ width: newWidth, height: newHeight });
-  }, [originalDimensions, onResize]);
+    // Remove immediate resize - only update on button click or input change
+  }, [originalDimensions]);
 
 
 
@@ -102,8 +99,7 @@ export function ResizeControls({
     if (checked && width > 0) {
       const newHeight = Math.round(width / aspectRatio);
       setHeight(newHeight);
-      // Apply resize immediately when aspect ratio is toggled
-      onResize({ width, height: newHeight });
+      // Remove immediate resize
     }
   }, [width, aspectRatio, onResize]);
 
@@ -161,9 +157,12 @@ export function ResizeControls({
         </div>
         
         <div>
-          <Label className="text-sm text-muted-foreground mb-2 block">
-            Scale
-          </Label>
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-sm text-muted-foreground">Scale</Label>
+            <span className="text-sm text-primary font-medium" data-testid="text-scale-value">
+              {Math.round(scale[0] * 100)}%
+            </span>
+          </div>
           <Slider
             value={scale}
             onValueChange={handleScaleChange}
@@ -173,15 +172,24 @@ export function ResizeControls({
             className="w-full"
             data-testid="slider-scale"
           />
-          <div className="flex justify-between text-xs text-muted-foreground mt-1">
-            <span>10%</span>
-            <span>300%</span>
+          <div className="relative mt-2 h-4">
+            <span className="absolute text-xs text-muted-foreground" style={{ left: '0%' }}>10%</span>
+            <span className="absolute text-xs text-muted-foreground" style={{ left: '13.8%' }}>50%</span>
+            <span className="absolute text-xs text-muted-foreground" style={{ left: '31%' }}>100%</span>
+            <span className="absolute text-xs text-muted-foreground" style={{ left: '48.3%' }}>150%</span>
+            <span className="absolute text-xs text-muted-foreground" style={{ left: '65.5%' }}>200%</span>
+            <span className="absolute text-xs text-muted-foreground" style={{ left: '82.8%' }}>250%</span>
+            <span className="absolute text-xs text-muted-foreground" style={{ right: '0%' }}>300%</span>
           </div>
         </div>
         
-        <div className="text-xs text-muted-foreground text-center">
-          Changes apply automatically
-        </div>
+        <Button 
+          onClick={() => onResize({ width, height })}
+          className="w-full"
+          data-testid="button-apply-resize"
+        >
+          Apply Resize
+        </Button>
       </CardContent>
     </Card>
   );
