@@ -17,7 +17,11 @@ export class ImageProcessor {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d')!;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Unable to get 2D rendering context from canvas');
+    }
+    this.ctx = context;
   }
 
   loadImage(file: File): Promise<HTMLImageElement> {
@@ -53,12 +57,19 @@ export class ImageProcessor {
   }
 
   resize(width: number, height: number) {
+    if (width <= 0 || height <= 0) {
+      throw new Error('Width and height must be positive numbers');
+    }
+    
     // Get current canvas content as an image
     const currentImageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
     
     // Create a temporary canvas with current content
     const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d')!;
+    const tempCtx = tempCanvas.getContext('2d');
+    if (!tempCtx) {
+      throw new Error('Unable to create temporary canvas context');
+    }
     tempCanvas.width = this.canvas.width;
     tempCanvas.height = this.canvas.height;
     tempCtx.putImageData(currentImageData, 0, 0);
@@ -71,11 +82,24 @@ export class ImageProcessor {
   }
 
   crop(cropArea: CropArea) {
-    if (!this.originalImage) return;
+    if (!this.originalImage) {
+      throw new Error('No original image available for cropping');
+    }
+    
+    if (cropArea.width <= 0 || cropArea.height <= 0) {
+      throw new Error('Crop area must have positive dimensions');
+    }
+    
+    if (cropArea.x < 0 || cropArea.y < 0) {
+      throw new Error('Crop area coordinates must be non-negative');
+    }
     
     // Create a temporary canvas to hold the cropped image
     const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d')!;
+    const tempCtx = tempCanvas.getContext('2d');
+    if (!tempCtx) {
+      throw new Error('Unable to create temporary canvas context for cropping');
+    }
     
     tempCanvas.width = cropArea.width;
     tempCanvas.height = cropArea.height;
@@ -95,7 +119,9 @@ export class ImageProcessor {
   }
 
   reset() {
-    if (!this.originalImage) return;
+    if (!this.originalImage) {
+      throw new Error('No original image available for reset');
+    }
     this.drawImage(this.originalImage);
   }
 
@@ -104,9 +130,19 @@ export class ImageProcessor {
   }
 
   downloadImage(filename: string, quality: number = 0.9) {
+    if (quality < 0 || quality > 1) {
+      throw new Error('Quality must be between 0 and 1');
+    }
+    
+    if (!filename.trim()) {
+      throw new Error('Filename cannot be empty');
+    }
+    
     this.canvas.toBlob(
       (blob) => {
-        if (!blob) return;
+        if (!blob) {
+          throw new Error('Failed to create image blob for download');
+        }
         
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
