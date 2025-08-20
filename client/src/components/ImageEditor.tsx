@@ -39,9 +39,7 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
   }, [originalImage]);
 
   const handleResize = useCallback((dimensions: ImageDimensions) => {
-    console.log('ImageEditor handleResize called with:', dimensions);
     if (processor) {
-      console.log('Processor exists, calling resize');
       processor.resize(dimensions.width, dimensions.height);
       setCurrentDimensions(dimensions);
       // Adjust crop area to stay within new bounds
@@ -52,8 +50,6 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
         width: Math.min(prev.width, dimensions.width),
         height: Math.min(prev.height, dimensions.height)
       }));
-    } else {
-      console.log('No processor available');
     }
   }, [processor]);
 
@@ -138,15 +134,14 @@ export function ImageEditor({ file, originalImage, onReset }: ImageEditorProps) 
             </div>
           </CardHeader>
           <CardContent>
-            <div className="relative bg-muted rounded-lg p-4 min-h-[400px] flex items-center justify-center canvas-container">
+            <div className="relative bg-muted rounded-lg p-4 min-h-[400px] max-h-[600px] overflow-auto flex items-center justify-center canvas-container">
               <canvas
                 ref={canvasRef}
                 className="border border-border rounded shadow-lg"
                 style={{ 
                   cursor: cropMode ? 'crosshair' : 'default',
                   maxWidth: '100%',
-                  maxHeight: '500px',
-                  objectFit: 'contain'
+                  height: 'auto'
                 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
